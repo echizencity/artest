@@ -275,7 +275,7 @@
         joystickBallRight.style.left = `calc(50% + ${offsetX}px)`;
         joystickBallRight.style.top = `calc(50% + ${offsetY}px)`;
         const model = document.getElementById("model");
-        model.object3D.position.x += offsetX * 0.001;
+        model.object3D.position.x -= offsetX * 0.001;
         model.object3D.position.z -= offsetY * 0.001;
       };
   
