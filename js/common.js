@@ -191,6 +191,7 @@ dropdownContainer.addEventListener('change', function () {
         document.getElementById('overviewUrl').href = selectedLocation.url;
         showModal();
     });
+    addCursor();
     initializemodal();
 });
 
@@ -229,6 +230,7 @@ const init = () => {
         document.addEventListener('touchstart', onTouchStart, { passive: false });
         document.addEventListener('touchmove', onTouchMove, { passive: false });
         document.addEventListener('touchend', function (event) {
+            addCursor();
             var now = (new Date()).getTime();
             if (now - lastTouchEnd <= 300) {
                 event.preventDefault();
@@ -261,58 +263,85 @@ function onTouchMove(event) {
   if (isModalVisible) {
       return;
   }
+
   for (let i = 0; i < locationsSet.length + 1; i++) {
         var model = document.getElementById(`model${i}`);
 
         if (model !== null && model.object3D !== null) {
-        if (event.touches.length == 1) {
-            event.preventDefault();
-            
-            var touchX = event.touches[0].clientX;
-            var touchY = event.touches[0].clientY;
+            if (event.touches.length == 1) {
+                event.preventDefault();
+                
+                var touchX = event.touches[0].clientX;
+                var touchY = event.touches[0].clientY;
+    
+                var deltaX = touchX - touchStartX;
+                var deltaY = touchY - touchStartY;
+    
+                let rad = 0;
 
-            var deltaX = touchX - touchStartX;
-            var deltaY = touchY - touchStartY;
+                if(os == "iphone") {
+                  rad = degrees * Math.PI / 180;
+                }else{
+                  rad = (degrees + orientation) * Math.PI / 180;
+                }        
+      
+                const newX = deltaX * Math.cos(rad) - deltaY * Math.sin(rad);
+                const newY = deltaX * Math.sin(rad) + deltaY * Math.cos(rad);
 
-            let rad = 0;
-            if(os == "iphone") {
-              rad = degrees * Math.PI / 180;
-            }else{
-              rad = (degrees + orientation) * Math.PI / 180;
-            }        
-            const newX = deltaX * Math.cos(rad) - deltaY * Math.sin(rad);
-            const newY = deltaX * Math.sin(rad) + deltaY * Math.cos(rad);
+                if(Math.sqrt(newX * newX + newY * newY) > 0.1) {
+                  removeCursor();
+                }
 
-            model.object3D.position.x += newX * 0.01;
-            model.object3D.position.z += newY * 0.01;
-
-            touchStartX = touchX;
-            touchStartY = touchY;
-        }
-        else if (event.touches.length == 2) {
-            event.preventDefault();
-
-            var touch1 = event.touches[0];
-            var touch2 = event.touches[1];
-            var currentDistance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
-            var distanceDiff = currentDistance - initialDistance;
-            var currentAngle = Math.atan2(touch2.clientY - touch1.clientY, touch2.clientX - touch1.clientX) * 180 / Math.PI;
-
-            if (currentDistance - pinchThreshold > initialDistance) {
-                model.object3D.position.y += 0.5;
-            } else if (currentDistance + pinchThreshold < initialDistance) {
-                model.object3D.position.y -= 0.5;
+                model.object3D.position.x += newX * 0.005;
+                model.object3D.position.z += newY * 0.005;
+    
+                touchStartX = touchX;
+                touchStartY = touchY;
             }
+            else if (event.touches.length == 2) {
+                event.preventDefault();
+                removeCursor();
 
-            var angleChange = currentAngle - initialAngle;
-            model.object3D.rotation.y -= angleChange * Math.PI / 180 * 1;
-
-            initialDistance = currentDistance;
-            initialAngle = currentAngle;
-        }
+                var touch1 = event.touches[0];
+                var touch2 = event.touches[1];
+                var currentDistance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+                var distanceDiff = currentDistance - initialDistance;
+                var currentAngle = Math.atan2(touch2.clientY - touch1.clientY, touch2.clientX - touch1.clientX) * 180 / Math.PI;
+    
+                if (currentDistance - pinchThreshold > initialDistance) {
+                    model.object3D.position.y += 0.5;
+                } else if (currentDistance + pinchThreshold < initialDistance) {
+                    model.object3D.position.y -= 0.5;
+                }
+    
+                var angleChange = currentAngle - initialAngle;
+                model.object3D.rotation.y -= angleChange * Math.PI / 180 * 1;
+    
+                initialDistance = currentDistance;
+                initialAngle = currentAngle;
+            }
         }
     }
 }
+
+
+function removeCursor() {
+    var cursor = document.querySelector('a-entity[cursor]');
+    if (cursor) {
+        cursor.parentNode.removeChild(cursor);
+    }
+}
+
+function addCursor() {
+    var existingCursor = document.querySelector('a-entity[cursor]');
+    if (!existingCursor) {
+        var scene = document.querySelector('a-scene');
+        var cursorEntity = document.createElement('a-entity');
+        cursorEntity.setAttribute('cursor', 'rayOrigin: mouse');
+        scene.appendChild(cursorEntity);
+    }
+}
+
 
 // OS識別
 let os;
