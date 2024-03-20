@@ -1,6 +1,7 @@
-
 // locations.csvのパス
+// const locationsFilePath = 'https://echizencity.github.io/opendata/kokufuhakkutsu/locations.csv';
 const locationsFilePath = 'https://echizencity.github.io/artest/csv/locations.csv';
+// const locationsFilePath = 'https://echizencity.github.io/artest/csv/locations2.csv';
 
 // モデルの場所を設定
 const targetPosition = `
@@ -19,8 +20,8 @@ const targetPosition = `
                          animation="property: position; to: 6.5 0.7 1.8; dur: 500; easing: easeInSine; loop: true; dir: alternate"></a-entity>
   <a-entity id="arrow7" gltf-model="#arrow-asset" position="-7 0.8 3" scale="0.25 0.25 0.25" rotation="0 0 180"
                          animation="property: position; to: -7 0.7 3; dur: 500; easing: easeInSine; loop: true; dir: alternate"></a-entity>
-  <a-entity id="arrow8" gltf-model="#arrow-asset" position="4.6 0.8 1.4" scale="0.25 0.25 0.25" rotation="0 0 180"
-                         animation="property: position; to: 4.6 0.7 1.4; dur: 500; easing: easeInSine; loop: true; dir: alternate"></a-entity>
+  <a-entity id="arrow8" gltf-model="#arrow-asset" position="5.2 0.8 1.45" scale="0.25 0.25 0.25" rotation="0 0 180"
+                         animation="property: position; to: 5.2 0.7 1.45; dur: 500; easing: easeInSine; loop: true; dir: alternate"></a-entity>
   <a-entity id="arrow9" gltf-model="#arrow-asset" position="-7.2 0.8 0.2" scale="0.25 0.25 0.25" rotation="0 0 180"
                          animation="property: position; to: -7.2 0.7 0.2; dur: 500; easing: easeInSine; loop: true; dir: alternate"></a-entity>
   <a-entity id="arrow10" gltf-model="#arrow-asset" position="7.8 0.8 -0.8" scale="0.25 0.25 0.25" rotation="0 0 180"
@@ -33,8 +34,8 @@ async function fetchLocations() {
         const response = await fetch(locationsFilePath);
         const data = await response.text();
         const locations = parseCSV(data);
-        updateDropdown(locations);
         locationsSet = locations;
+        updateDropdown(locations);
     } catch (error) {
         console.error('Error fetching locations:', error);
     }
@@ -66,11 +67,13 @@ function updateDropdown(locations) {
     dropdownContainer.appendChild(dropdown);
     dropdown.innerHTML = ''; // リストをクリア
 
-    // デフォルトオプションを追加
-    const defaultOption = document.createElement('option');
-    defaultOption.value = -2;
-    defaultOption.text = 'モデルを配置する場所を選択';
-    dropdown.appendChild(defaultOption);
+    // リストが1件の場合はデフォルトオプションを表示しない
+    if (locations.length > 1) {
+        const defaultOption = document.createElement('option');
+        defaultOption.value = -2;
+        defaultOption.text = 'モデルを配置する場所を選択';
+        dropdown.appendChild(defaultOption);
+    }
 
     locations.forEach((location, index) => {
         const option = document.createElement('option');
@@ -84,6 +87,12 @@ function updateDropdown(locations) {
         }
         dropdown.appendChild(option);
     });
+
+    // リストが1件だけの場合は、その場所のモデルを直ちに表示
+    if (locations.length === 1) {
+        const selectedIndex = (locations[0].name === "現在地") ? -1 : 0;
+        displaySelectedModel(selectedIndex, locations);
+    }
 }
 
 // 現在の位置情報を保持する変数
@@ -104,34 +113,16 @@ function hideModal() {
     isModalVisible = false;
 }
 
-// ドロップダウンリストの変更イベントを監視し、選択されたモデルの表示・非表示を切り替える
-dropdownContainer.addEventListener('change', function () {
-    const dropdown = this.querySelector('#locationDropdown');
-    const selectedIndex = parseInt(dropdown.value);
-
-    // 選択されたモデル以外を削除
-    for (let i = 0; i < locationsSet.length; i++) {
-        const modelId = `model${i}`;
-        if (i !== selectedIndex) {
-            const model = document.getElementById(modelId);
-            if (model) {
-                model.parentNode.removeChild(model);
-            }
-        }
-    }
-
-    // デフォルトオプションでは何もしない
-    if (selectedIndex === -2) {
-      return;
-    }
-
+// モデル作成
+function createModelEntity(selectedIndex, locations) {
     const selectedModelId = `model${selectedIndex + 1}`;
     const modelEntity = document.createElement('a-entity');
     modelEntity.setAttribute('id', selectedModelId);
 
     const orientation1 = -90 - 13 + orientation;
-    const rotationValue1 = "0 " + orientation1 + " 0"  // Y軸周り回転させる場合(iphone)
-    const rotationValue2 = "0 -103 0 "  // Y軸周り回転させる場合(iphone以外)
+    const rotationValue1 = "0 " + orientation1 + " 0";  // Y軸周り回転させる場合(iphone)
+    const orientation2 = -90 - 13;
+    const rotationValue2 = "0 " + orientation2 + " 0";  // Y軸周り回転させる場合(iphone以外)
 
     // 選択された場所が現在地の場合は、現在位置を取得してモデルを表示
     if (selectedIndex === -1) {
@@ -161,9 +152,55 @@ dropdownContainer.addEventListener('change', function () {
     modelAssetItem.setAttribute('id', 'model-asset');
     modelAssetItem.setAttribute('src', selectedLocation.modelURL);
     modelEntity.appendChild(modelAssetItem);
-    document.getElementById('modelContainer').appendChild(modelEntity);
 
-    document.getElementById('overviewButton').addEventListener('click', function() {
+    return modelEntity;
+}
+
+// ロード時に最初のモデルを表示する関数
+function displaySelectedModel(selectedIndex, locations) {
+    const modelEntity = createModelEntity(selectedIndex, locations);
+
+    // モデルをモデルコンテナに追加
+    const modelContainer = document.getElementById('modelContainer');
+    modelContainer.appendChild(modelEntity);
+
+    // モデルに関連する情報を表示
+    document.getElementById('overviewButton2').addEventListener('click', function() {
+        document.getElementById('modalContainer2').style.display = 'block';
+        document.getElementById('overviewTitle').innerText = selectedLocation.title;
+        document.getElementById('overviewSubtitle').innerText = selectedLocation.subtitle;
+        document.getElementById('overviewDescription').innerText = selectedLocation.description;
+        document.getElementById('overviewImage').src = selectedLocation.image;
+        document.getElementById('overviewUrl').href = selectedLocation.url;
+        showModal();
+    });
+    addCursor();
+    initializemodal();
+}
+
+// ドロップダウンリストの変更イベントを監視し、選択されたモデルの表示・非表示を切り替える
+dropdownContainer.addEventListener('change', function () {
+    const dropdown = this.querySelector('#locationDropdown');
+    const selectedIndex = parseInt(dropdown.value);
+
+    // モデルコンテナからすべての子要素（モデル）を削除
+    const modelContainer = document.getElementById('modelContainer');
+    while (modelContainer.firstChild) {
+        modelContainer.removeChild(modelContainer.firstChild);
+    }
+
+    // デフォルトオプションでは何もしない
+    if (selectedIndex === -2) {
+        return;
+    }
+
+    const modelEntity = createModelEntity(selectedIndex, locationsSet);
+
+    // モデルをモデルコンテナに追加
+    modelContainer.appendChild(modelEntity);
+
+    // モデルに関連する情報を表示
+    document.getElementById('overviewButton2').addEventListener('click', function() {
         document.getElementById('modalContainer2').style.display = 'block';
         document.getElementById('overviewTitle').innerText = selectedLocation.title;
         document.getElementById('overviewSubtitle').innerText = selectedLocation.subtitle;
@@ -176,17 +213,34 @@ dropdownContainer.addEventListener('change', function () {
     initializemodal();
 });
 
-// モーダルを閉じる
+
+// 概要モーダルを閉じる
 function closeModal2() {
     document.getElementById('modalContainer2').style.display = 'none';
     hideModal();
 }
 
-// モーダルの背景をクリックしたらモーダルを閉じる
-function closeModalBackground(event) {
+// 概要モーダルの背景をクリックしたらモーダルを閉じる
+function closeModalBackground2(event) {
     var modal = document.getElementById('modalContainer2');
     if (event.target === modal) {
         modal.style.display = "none";
+        hideModal();
+    }
+}
+
+// 使い方モーダルを閉じる
+function closeModal3() {
+    document.getElementById('modalContainer3').style.display = 'none';
+    hideModal();
+}
+
+// 使い方モーダルの背景をクリックしたらモーダルを閉じる
+function closeModalBackground3(event) {
+    var modal = document.getElementById('modalContainer3');
+    if (event.target === modal) {
+        modal.style.display = "none";
+        hideModal();
     }
 }
 
@@ -211,12 +265,14 @@ const init = () => {
         document.addEventListener('touchstart', onTouchStart, { passive: false });
         document.addEventListener('touchmove', onTouchMove, { passive: false });
         document.addEventListener('touchend', function (event) {
-            addCursor();
             var now = (new Date()).getTime();
+            if (now - lastTouchEnd > 300) {
+                addCursor();
+            }
             if (now - lastTouchEnd <= 300) {
                 event.preventDefault();
             }
-          lastTouchEnd = now;
+            lastTouchEnd = now;
         }, false);
         isInitialized = true; // 初期化済みに設定
     }
@@ -238,7 +294,7 @@ function onTouchStart(event) {
     }
 }
 
-const pinchThreshold = 10;
+const pinchThreshold = 2;
 
 function onTouchMove(event) {
   if (isModalVisible) {
@@ -269,12 +325,12 @@ function onTouchMove(event) {
                 const newX = deltaX * Math.cos(rad) - deltaY * Math.sin(rad);
                 const newY = deltaX * Math.sin(rad) + deltaY * Math.cos(rad);
 
-                if(Math.sqrt(newX * newX + newY * newY) > 0.1) {
+                if(Math.sqrt(newX * newX + newY * newY) > 0.05) {
                   removeCursor();
                 }
 
-                model.object3D.position.x += newX * 0.005;
-                model.object3D.position.z += newY * 0.005;
+                model.object3D.position.x += newX * 0.01;
+                model.object3D.position.z += newY * 0.01;
     
                 touchStartX = touchX;
                 touchStartY = touchY;
@@ -290,9 +346,9 @@ function onTouchMove(event) {
                 var currentAngle = Math.atan2(touch2.clientY - touch1.clientY, touch2.clientX - touch1.clientX) * 180 / Math.PI;
     
                 if (currentDistance - pinchThreshold > initialDistance) {
-                    model.object3D.position.y += 0.5;
+                    model.object3D.position.y += 0.1;
                 } else if (currentDistance + pinchThreshold < initialDistance) {
-                    model.object3D.position.y -= 0.5;
+                    model.object3D.position.y -= 0.1;
                 }
     
                 var angleChange = currentAngle - initialAngle;
@@ -402,6 +458,16 @@ function permitDeviceOrientationForSafari() {
         .catch(error => {
             console.error(error);
         });
+}
+
+function checkOrientation() {
+  if (window.matchMedia("(min-width: 1000px)").matches || Math.abs(window.orientation) === 0) {
+      $('#rotateMessageContainer').hide();
+      $('#contentWrapper').show();
+  } else {
+      $('#rotateMessageContainer').show();
+      $('#contentWrapper').hide();
+  }
 }
 
 init();
