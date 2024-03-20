@@ -10,29 +10,78 @@
   </head>
 
   <body>
-    <div id="dropdownContainer"></div>
-    <button class="reload-button" onclick="location.reload()">Reload</button>
-    <button id="overviewButton" class="overview-button">概要</button>
-    <a-scene vr-mode-ui="enabled: false" embedded arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false">
-        <a-assets>
-            <a-asset-item id="arrow-asset" src="https://code4fukui.github.io/vr-dinosaur-museum/arrow.glb"></a-asset-item>
-        </a-assets>
-        <a-entity id="modelContainer"></a-entity>
-        <a-camera gps-camera="gpsMinDistance:1;" rotation-reader></a-camera>
-    </a-scene>
+    <div id="rotateMessageContainer">
+      <div id="rotateMessage">Rotate Your Phone</div>
+      <img id="rotateImage" src="./image/00.png">
+    </div>
+    <div id="contentWrapper">
+        <div id="dropdownContainer"></div>
+        <button class="reload-button" onclick="location.reload()">Reload</button>
+        <button id="overviewButton2" class="overview-button">概要</button>
+        <button id="overviewButton3" class="overview-button">使い方</button>
+    
+<!--         <div id="compassHeadingDisplay">
+            <span id="direction"></span>
+        </div> -->
 
-    <div id="modalContainer"></div>
+        <a-scene vr-mode-ui="enabled: false" embedded arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false">
+            <a-assets>
+                <a-asset-item id="arrow-asset" src="https://code4fukui.github.io/vr-dinosaur-museum/arrow.glb"></a-asset-item>
+            </a-assets>
+            <a-entity id="modelContainer"></a-entity>
+            <a-camera gps-camera="gpsMinDistance:1;" rotation-reader></a-camera>
+        </a-scene>
+    
+        <div id="modalContainer"></div>
+    
+        <div id="modalContainer2" class="modal" onclick="closeModalBackground2(event)">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal2()">&times;</span>
+                <div id="overviewTitle"></div>
+                <div id="overviewSubtitle"></div>
+                <div id="overviewDescription"></div>
+                <img id="overviewImage" src="" alt="Overview Image">
+                <a id="overviewUrl" href="#" target="_blank">詳細を見る</a>
+            </div>
+        </div>
 
-    <div id="modalContainer2" class="modal" onclick="closeModalBackground(event)">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal2()">&times;</span>
-            <div id="overviewTitle"></div>
-            <div id="overviewSubtitle"></div>
-            <div id="overviewDescription"></div>
-            <img id="overviewImage" src="" alt="Overview Image">
-            <a id="overviewUrl" href="#" target="_blank">詳細を見る</a>
+        <div id="modalContainer3" class="modal" onclick="closeModalBackground3(event)">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal3()">&times;</span>
+                <div class="image-text-pair">
+                    <div>前後左右の移動</div>
+                    <img src="./image/01.png">
+                </div>
+                <div class="image-text-pair">
+                    <div>モデルの回転</div>
+                    <img src="./image/02.png">
+                </div>
+                <div class="image-text-pair">
+                    <div>視点の下降</div>
+                    <img src="./image/03.png">
+                </div>
+                <div class="image-text-pair">
+                    <div>視点の上昇</div>
+                    <img src="./image/04.png">
+                </div>
+            </div>
         </div>
     </div>
     <script src="./js/common.js"></script>
+    <script>
+      $(window).on('load', function(){
+          checkOrientation();
+      });
+
+      $(window).on('orientationchange resize', function(){
+          location.reload();
+          checkOrientation();
+      });
+      // 使い方に関連する情報を表示
+      document.getElementById('overviewButton3').addEventListener('click', function() {
+          document.getElementById('modalContainer3').style.display = 'block';
+          showModal();
+      });
+    </script>
   </body>
 </html>
